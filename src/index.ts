@@ -3,39 +3,41 @@ import { ScrapperData } from "./types/ScrapperData";
 import { Font } from "./types/Font";
 import { Button } from "./types/Button";
 
+
+function getFontUrl(fontFamily : any) {
+    const styleSheets = document.styleSheets;
+
+    for (let i = 0; i < styleSheets.length; i++) {
+        try {
+            const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+
+            for (let j = 0; j < rules.length; j++) {
+                const rule = rules[j];
+
+                // Check if the rule is a @font-face rule
+                if (rule instanceof CSSFontFaceRule) {
+                    const ruleFontFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim();
+
+                    // If the font-family matches, return the src (font URL)
+                    if (ruleFontFamily === fontFamily) {
+                        const fontUrl = rule.style.getPropertyValue('src');
+                        return fontUrl;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Cannot access stylesheet:', styleSheets[i], e);
+        }
+    }
+
+    return ''; // If the font URL is not found
+}
+
 async function scrapeShopifyProductPage(url : string) : Promise<ScrapperData> {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(url);
 
-    function getFontUrl(fontFamily : any) {
-        const styleSheets = document.styleSheets;
-    
-        for (let i = 0; i < styleSheets.length; i++) {
-            try {
-                const rules = styleSheets[i].cssRules || styleSheets[i].rules;
-    
-                for (let j = 0; j < rules.length; j++) {
-                    const rule = rules[j];
-    
-                    // Check if the rule is a @font-face rule
-                    if (rule instanceof CSSFontFaceRule) {
-                        const ruleFontFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim();
-    
-                        // If the font-family matches, return the src (font URL)
-                        if (ruleFontFamily === fontFamily) {
-                            const fontUrl = rule.style.getPropertyValue('src');
-                            return fontUrl;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('Cannot access stylesheet:', styleSheets[i], e);
-            }
-        }
-    
-        return ''; // If the font URL is not found
-    }
     const data = await page.evaluate(()=>{
         const fonts: Font[] = [];
 
@@ -89,5 +91,5 @@ async function scrapeShopifyProductPage(url : string) : Promise<ScrapperData> {
 
     const scrapperData = await scrapeShopifyProductPage(url);
 
-    console.log(JSON.stringify(scrapperData))
-})
+    console.log(JSON.stringify(scrapperData, null, 2))
+})();

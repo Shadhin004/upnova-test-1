@@ -13,35 +13,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer_1 = __importDefault(require("puppeteer"));
+function getFontUrl(fontFamily) {
+    const styleSheets = document.styleSheets;
+    for (let i = 0; i < styleSheets.length; i++) {
+        try {
+            const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+            for (let j = 0; j < rules.length; j++) {
+                const rule = rules[j];
+                // Check if the rule is a @font-face rule
+                if (rule instanceof CSSFontFaceRule) {
+                    const ruleFontFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim();
+                    // If the font-family matches, return the src (font URL)
+                    if (ruleFontFamily === fontFamily) {
+                        const fontUrl = rule.style.getPropertyValue('src');
+                        return fontUrl;
+                    }
+                }
+            }
+        }
+        catch (e) {
+            console.warn('Cannot access stylesheet:', styleSheets[i], e);
+        }
+    }
+    return ''; // If the font URL is not found
+}
 function scrapeShopifyProductPage(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const browser = yield puppeteer_1.default.launch();
         const page = yield browser.newPage();
         yield page.goto(url);
-        function getFontUrl(fontFamily) {
-            const styleSheets = document.styleSheets;
-            for (let i = 0; i < styleSheets.length; i++) {
-                try {
-                    const rules = styleSheets[i].cssRules || styleSheets[i].rules;
-                    for (let j = 0; j < rules.length; j++) {
-                        const rule = rules[j];
-                        // Check if the rule is a @font-face rule
-                        if (rule instanceof CSSFontFaceRule) {
-                            const ruleFontFamily = rule.style.getPropertyValue('font-family').replace(/['"]/g, '').trim();
-                            // If the font-family matches, return the src (font URL)
-                            if (ruleFontFamily === fontFamily) {
-                                const fontUrl = rule.style.getPropertyValue('src');
-                                return fontUrl;
-                            }
-                        }
-                    }
-                }
-                catch (e) {
-                    console.warn('Cannot access stylesheet:', styleSheets[i], e);
-                }
-            }
-            return ''; // If the font URL is not found
-        }
         const data = yield page.evaluate(() => {
             const fonts = [];
             const fontElements = document.querySelectorAll('font');
@@ -87,5 +87,5 @@ function scrapeShopifyProductPage(url) {
 (() => __awaiter(void 0, void 0, void 0, function* () {
     const url = 'https://growgrows.com/en-us/products/plentiful-planets-sleepsuit';
     const scrapperData = yield scrapeShopifyProductPage(url);
-    console.log(JSON.stringify(scrapperData));
-}));
+    console.log(JSON.stringify(scrapperData, null, 2));
+}))();
